@@ -49,3 +49,10 @@ jobs:
         if: github.repository != 'LNReader/lnreader-plugins'
         run: npm run publish:plugins -- --all-branches
         shell: bash
+      - name: Update latest branch
+        if: github.repository != 'LNReader/lnreader-plugins'
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          git fetch origin "plugins/v$VERSION"
+          git push origin "origin/plugins/v$VERSION:refs/heads/plugins/latest" --force
