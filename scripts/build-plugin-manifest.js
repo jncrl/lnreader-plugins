@@ -88,6 +88,9 @@ const _require = () => proxy;
 const COMPILED_PLUGIN_DIR = './.js/plugins';
 
 for (let language in languages) {
+  // Only publish English plugins and Komga
+  if (language !== 'English' && language !== 'Multi') continue;
+
   console.log(
     ` ${language} `
       .padStart(Math.floor((language.length + 32) / 2), '=')
