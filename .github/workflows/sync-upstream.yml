@@ -7,6 +7,11 @@ on:
 
 permissions:
   contents: write
+  actions: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -16,6 +21,7 @@ jobs:
       - name: Checkout fork
         uses: actions/checkout@v4
         with:
+          ref: master
           fetch-depth: 0
 
       - name: Fetch official repository
@@ -24,10 +30,48 @@ jobs:
           git fetch upstream master
 
       - name: Merge upstream changes
+        id: merge
+        shell: bash
         run: |
-          git checkout master
+          set -euo pipefail
+
+          OLD_SHA=$(git rev-parse HEAD)
+
           git merge upstream/master --no-edit
 
-      - name: Push changes to my fork only
+          NEW_SHA=$(git rev-parse HEAD)
+
+          echo "old_sha=$OLD_SHA" >> "$GITHUB_OUTPUT"
+          echo "new_sha=$NEW_SHA" >> "$GITHUB_OUTPUT"
+
+          if [ "$OLD_SHA" = "$NEW_SHA" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Already up to date."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Upstream changes merged."
+          fi
+
+      - name: Push changes to my fork
+        if: steps.merge.outputs.changed == 'true'
+        run: git push origin master
+
+      - name: Check for plugin changes
+        if: steps.merge.outputs.changed == 'true'
+        id: plugins
         run: |
-          git push origin master
+          if git diff --quiet \
+            "${{ steps.merge.outputs.old_sha }}" \
+            "${{ steps.merge.outputs.new_sha }}" \
+            -- plugins/ public/ scripts/publish-plugins.sh \
+            .github/workflows/publish-plugins.yml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger plugin publishing
+        if: steps.plugins.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish-plugins.yml --ref master
