@@ -30,7 +30,7 @@ jobs:
           git remote add upstream https://github.com/LNReader/lnreader-plugins.git
           git fetch upstream master
 
-      - name: Configure git identity        # <-- new step
+      - name: Configure git identity
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -80,4 +80,5 @@ jobs:
         if: steps.plugins.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: gh workflow run publish-plugins.yml --ref master
