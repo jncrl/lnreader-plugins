@@ -29,6 +29,11 @@ jobs:
           git remote add upstream https://github.com/LNReader/lnreader-plugins.git
           git fetch upstream master
 
+      - name: Configure git identity        # <-- new step
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       - name: Merge upstream changes
         id: merge
         shell: bash
