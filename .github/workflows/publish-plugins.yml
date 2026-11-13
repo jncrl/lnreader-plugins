@@ -9,7 +9,8 @@ on:
       - 'public/**'
       - 'scripts/publish-plugins.sh'
       - '.github/workflows/publish-plugins.yml'
-
+  workflow_dispatch:
+  
 permissions:
   contents: write
 
