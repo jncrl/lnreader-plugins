@@ -19,7 +19,7 @@ class ShadowSlaveTelegraph implements Plugin.PluginBase {
   name = 'Shadow Slave (Telegraph)';
   icon = 'src/en/shadowslave/icon.png';
   site = 'https://telegra.ph';
-  version = '1.0.0';
+  version = '1.0.1';
 
   private toPath(href: string): string {
     return href.startsWith(this.site) ? href.slice(this.site.length) : href;
