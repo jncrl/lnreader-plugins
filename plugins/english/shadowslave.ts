@@ -14,6 +14,7 @@ const CHAPTER_RE = /^(?:Chapter\s*)?(\d+)/;
 // Secondary source: one rentry page per chapter at rentry.co/<number>ss.
 // Used only for chapter numbers beyond the last one Telegraph lists.
 const RENTRY = 'https://rentry.co';
+const MIN_RENTRY_CHARS = 500; // less body text than this = placeholder
 const RENTRY_BATCH = 8; // pages probed in parallel
 const RENTRY_MAX_BATCHES = 40; // safety cap: 320 chapters per refresh
 
@@ -24,7 +25,7 @@ class ShadowSlave implements Plugin.PluginBase {
   name = 'Shadow Slave (Telegraph/Rentry)';
   icon = 'src/en/shadowslave/icon.png';
   site = 'https://telegra.ph';
-  version = '1.1.0';
+  version = '1.1.1';
 
   private isRentry(path: string): boolean {
     return path.startsWith(RENTRY);
@@ -70,6 +71,22 @@ class ShadowSlave implements Plugin.PluginBase {
         $('title').text().trim();
       // Guards against error pages / Cloudflare challenge pages.
       if (!title.startsWith(String(num))) return null;
+      // Placeholder pages hold only a title and prev/next links.
+      let bodyChars = 0;
+      $('article')
+        .first()
+        .find('p')
+        .each((_, el) => {
+          const p = $(el);
+          const text = p.text().trim();
+          const kids = p.children();
+          const navOnly =
+            kids.length === 1 &&
+            kids.first().is('a') &&
+            kids.first().text().trim() === text;
+          if (!navOnly) bodyChars += text.length;
+        });
+      if (bodyChars < MIN_RENTRY_CHARS) return null;
       return { name: title, path: url };
     } catch {
       return null;
